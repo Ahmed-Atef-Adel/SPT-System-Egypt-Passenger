@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GoTrip — Passenger Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0d0f14;
+  --paper:#f7f5f0;
+  --card:#ffffff;
+  --orange:#f46315;
+  --orange-dk:#d4510d;
+  --orange-lt:#fff3ec;
+  --teal:#0ea89a;
+  --teal-lt:#e6faf8;
+  --red:#e53e3e;
+  --muted:#8a8f9e;
+  --border:#e8e6e0;
+  --shadow:0 2px 12px rgba(13,15,20,.08);
+  --shadow-lg:0 8px 40px rgba(13,15,20,.14);
+  --r:14px;
+  --r-sm:8px;
+  --font-head:'Fraunces',serif;
+  --font-body:'Plus Jakarta Sans',sans-serif;
+}
+html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6}
+.page{display:none;min-height:100vh;animation:pageIn .4s cubic-bezier(.22,1,.36,1)}
+.page.active{display:flex;flex-direction:column}
+@keyframes pageIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,99,21,.4)}70%{box-shadow:0 0 0 10px rgba(244,99,21,0)}}
+
+/* ═══════════════════ UTILITIES ═══════════════════ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 24px;border-radius:100px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all .22s;border:none;outline:none;text-decoration:none}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange-dk);transform:translateY(-1px);box-shadow:0 6px 20px rgba(244,99,21,.35)}
+.btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--ink);background:rgba(13,15,20,.04)}
+.btn-ghost{background:transparent;color:var(--muted);border:none;padding:8px 14px}
+.btn-ghost:hover{color:var(--ink);background:rgba(13,15,20,.05)}
+.btn-full{width:100%;padding:14px 24px;border-radius:var(--r-sm);font-size:15px}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+.spinner-dark{border-color:rgba(13,15,20,.15);border-top-color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600}
+.tag-orange{background:var(--orange-lt);color:var(--orange)}
+.tag-teal{background:var(--teal-lt);color:var(--teal)}
+.tag-gray{background:#f0eeea;color:var(--muted)}
+.tag-red{background:#fff0f0;color:var(--red)}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:20px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ═══════════════════ FORM ═══════════════════ */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:.2px}
+.form-input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:var(--font-body);font-size:14px;color:var(--ink);background:#fff;outline:none;transition:all .2s}
+.form-input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(244,99,21,.1)}
+.form-input::placeholder{color:#c4c2bc}
+.form-input.error{border-color:var(--red)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input-icon{position:relative}
+.input-icon .form-input{padding-left:42px}
+.input-icon .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+
+/* ═══════════════════ LANDING ═══════════════════ */
+#page-landing{background:var(--paper)}
+.land-nav{display:flex;justify-content:space-between;align-items:center;padding:20px 48px;position:relative;z-index:10}
+.logo{font-family:var(--font-head);font-size:24px;font-weight:900;color:var(--ink);letter-spacing:-.5px}
+.logo span{color:var(--orange)}
+.land-hero{display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden}
+.hero-left{padding:64px 48px 48px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.hero-left::before{content:'';position:absolute;top:-100px;left:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(244,99,21,.07),transparent 70%);pointer-events:none}
+.hero-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.eyebrow-dot{width:8px;height:8px;background:var(--orange);border-radius:50%;animation:pulse 2.5s infinite}
+.eyebrow-text{font-size:13px;font-weight:600;color:var(--orange);letter-spacing:.5px;text-transform:uppercase}
+.hero-h1{font-family:var(--font-head);font-size:clamp(42px,5vw,72px);font-weight:900;line-height:1.0;letter-spacing:-2px;color:var(--ink);margin-bottom:24px}
+.hero-h1 em{font-style:italic;color:var(--orange)}
+.hero-sub{font-size:17px;color:var(--muted);line-height:1.75;max-width:440px;margin-bottom:40px;font-weight:400}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.hero-right{background:var(--ink);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.hero-right::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(244,99,21,.25),transparent 60%)}
+.hero-map{position:relative;z-index:1;padding:40px}
+.map-card{background:rgba(255,255,255,.07);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:320px}
+.map-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.map-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.8px}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:#4ade80;font-weight:600}
+.live-dot{width:6px;height:6px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
+.route-visual{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.route-stop{display:flex;align-items:center;gap:12px}
+.stop-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.stop-dot.from{background:var(--orange);box-shadow:0 0 0 3px rgba(244,99,21,.3)}
+.stop-dot.to{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.3)}
+.stop-line{width:2px;height:32px;background:rgba(255,255,255,.15);margin-left:5px}
+.stop-label{font-size:14px;color:rgba(255,255,255,.85);font-weight:500}
+.stop-sub{font-size:11px;color:rgba(255,255,255,.4)}
+.driver-row{display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.05);border-radius:10px}
+.d-avatar{width:38px;height:38px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.d-info{flex:1}
+.d-name{font-size:13px;font-weight:600;color:#fff}
+.d-vehicle{font-size:11px;color:rgba(255,255,255,.4)}
+.d-eta{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--orange)}
+.stats-row{display:flex;gap:32px;margin-top:56px;padding-top:40px;border-top:1px solid var(--border)}
+.stat-num{font-family:var(--font-head);font-size:32px;font-weight:900;color:var(--ink)}
+.stat-num span{color:var(--orange)}
+.stat-label{font-size:12px;color:var(--muted);font-weight:500;margin-top:2px}
+.features-band{background:#fff;border-top:1px solid var(--border);padding:32px 48px;display:grid;grid-template-columns:repeat(3,1fr);gap:1px}
+.feat{padding:28px 32px;display:flex;align-items:flex-start;gap:16px;border-right:1px solid var(--border)}
+.feat:last-child{border-right:none}
+.feat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.feat-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.feat-desc{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ═══════════════════ AUTH ═══════════════════ */
+#page-login,#page-register{background:var(--paper)}
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.auth-card{background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);width:100%;max-width:440px;padding:40px;animation:scaleIn .35s cubic-bezier(.22,1,.36,1)}
+.auth-logo{font-family:var(--font-head);font-size:20px;font-weight:900;color:var(--ink);margin-bottom:28px;display:flex;align-items:center;gap:8px}
+.auth-logo span{color:var(--orange)}
+.auth-logo-dot{width:8px;height:8px;background:var(--orange);border-radius:50%}
+.auth-title{font-family:var(--font-head);font-size:28px;font-weight:900;letter-spacing:-.8px;margin-bottom:6px}
+.auth-sub{font-size:14px;color:var(--muted);margin-bottom:28px}
+.auth-sub a{color:var(--orange);font-weight:600;cursor:pointer;text-decoration:none}
+.auth-sub a:hover{text-decoration:underline}
+.auth-footer-link{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+.auth-footer-link a{color:var(--orange);font-weight:600;cursor:pointer}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:28px;background:none;border:none;font-family:var(--font-body);padding:0;transition:color .2s}
+.back-btn:hover{color:var(--ink)}
+.social-btn{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:#fff;color:var(--ink);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px}
+.social-btn:hover{border-color:var(--ink);background:#fafafa}
+.terms{font-size:12px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.6}
+
+/* ═══════════════════ TRIPS PAGE ═══════════════════ */
+#page-trips{background:var(--paper)}
+.app-header{background:#fff;border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 var(--border)}
+.app-header .logo{font-size:20px}
+.header-right{display:flex;align-items:center;gap:12px}
+.user-chip{display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:100px;border:1.5px solid var(--border);cursor:pointer;background:#fff;transition:all .2s}
+.user-chip:hover{border-color:var(--orange);background:var(--orange-lt)}
+.user-av{width:32px;height:32px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.user-chip-name{font-size:13px;font-weight:600}
+.trips-layout{display:grid;grid-template-columns:1fr 360px;flex:1;overflow:hidden;min-height:0}
+.trips-main{padding:28px 32px;overflow-y:auto}
+.trips-sidebar{background:#fff;border-left:1px solid var(--border);padding:24px;overflow-y:auto}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-family:var(--font-head);font-size:20px;font-weight:900;letter-spacing:-.5px}
+.section-count{font-size:13px;color:var(--muted);background:var(--paper);padding:4px 12px;border-radius:100px;font-weight:500}
+.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.trip-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .28s;position:relative}
+.trip-card:hover{border-color:var(--orange);transform:translateY(-4px);box-shadow:0 12px 36px rgba(244,99,21,.12)}
+.trip-card-top{padding:18px 18px 0;display:flex;justify-content:space-between;align-items:flex-start}
+.trip-route{font-family:var(--font-head);font-size:17px;font-weight:900;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;flex:1}
+.route-arrow{color:var(--orange);font-size:14px}
+.trip-price-tag{font-family:var(--font-head);font-size:22px;font-weight:900;color:var(--orange);line-height:1}
+.trip-price-tag small{font-family:var(--font-body);font-size:11px;color:var(--muted);font-weight:400;display:block;text-align:right}
+.trip-vehicle-banner{margin:14px 18px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.trip-meta{padding:0 18px 14px;display:flex;flex-wrap:wrap;gap:6px}
+.trip-driver{display:flex;align-items:center;gap:8px;margin:0 18px 14px;padding:10px 12px;background:var(--paper);border-radius:8px}
+.td-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.td-name{font-size:13px;font-weight:600;flex:1}
+.td-rating{font-size:12px;color:#f59e0b;font-weight:600}
+.trip-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.seats-left{font-size:13px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:4px}
+
+/* ═══════════════════ SIDEBAR / MY TRIPS ═══════════════════ */
+.sidebar-tabs{display:flex;gap:4px;background:var(--paper);border-radius:10px;padding:4px;margin-bottom:20px}
+.stab{flex:1;padding:8px;border:none;border-radius:8px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--muted)}
+.stab.active{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+.past-card{padding:14px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.past-card:hover{border-color:var(--orange);background:var(--orange-lt)}
+.past-route{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.past-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}
+.past-price{font-weight:700;color:var(--ink);font-size:13px}
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.empty-text{font-size:13px;line-height:1.6}
+
+/* ═══════════════════ MODAL ═══════════════════ */
+.overlay{position:fixed;inset:0;background:rgba(13,15,20,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .3s;padding:20px}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:500px;box-shadow:var(--shadow-lg);max-height:92vh;overflow-y:auto;animation:scaleIn .32s cubic-bezier(.22,1,.36,1)}
+.modal-hd{padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:var(--font-head);font-size:20px;font-weight:900;letter-spacing:-.5px}
+.modal-close{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px;transition:all .2s;flex-shrink:0}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+.modal-body{padding:20px 24px 24px}
+.trip-summary{background:var(--paper);border-radius:12px;padding:16px;margin-bottom:20px}
+.ts-row{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ts-row:last-child{border-bottom:none;padding-top:12px;margin-top:4px;font-weight:700;font-size:15px}
+.ts-label{color:var(--muted)}
+.ts-val{font-weight:600;color:var(--ink)}
+.ts-total{color:var(--orange)!important}
+.pay-methods{display:flex;gap:6px;background:var(--paper);border-radius:10px;padding:4px;margin-bottom:20px}
+.pm-tab{flex:1;padding:9px 6px;border:none;border-radius:8px;font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;background:transparent;color:var(--muted);text-align:center}
+.pm-tab.active{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+.pm-panel{display:none}
+.pm-panel.active{display:block}
+
+/* Card panel */
+.card-visual{background:linear-gradient(135deg,#1a1f36 0%,#0d1117 60%,#1a2640 100%);border-radius:14px;padding:22px;margin-bottom:18px;position:relative;overflow:hidden;height:160px}
+.card-visual::before{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:rgba(244,99,21,.18)}
+.card-visual::after{content:'';position:absolute;right:20px;top:40px;width:90px;height:90px;border-radius:50%;background:rgba(14,168,154,.12)}
+.cv-chip{width:36px;height:26px;background:linear-gradient(135deg,#d4af37,#f0d060);border-radius:4px;margin-bottom:16px;position:relative;z-index:1}
+.cv-num{font-family:'Courier New',monospace;font-size:16px;letter-spacing:2.5px;color:rgba(255,255,255,.88);margin-bottom:14px;position:relative;z-index:1}
+.cv-bottom{display:flex;justify-content:space-between;position:relative;z-index:1}
+.cv-holder-label,.cv-exp-label{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+.cv-holder-name,.cv-exp-val{font-size:13px;color:rgba(255,255,255,.88);font-weight:500;margin-top:2px}
+.cv-network{position:absolute;right:22px;bottom:22px;display:flex;z-index:1}
+.cv-circle-r{width:28px;height:28px;border-radius:50%;background:rgba(235,0,0,.75)}
+.cv-circle-y{width:28px;height:28px;border-radius:50%;background:rgba(255,165,0,.75);margin-left:-10px}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.secure-note{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);margin-top:12px}
+.ewallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.ew-btn{padding:16px 12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;transition:all .2s;text-align:center;font-family:var(--font-body)}
+.ew-btn:hover{border-color:var(--orange);background:var(--orange-lt)}
+.ew-icon{font-size:26px;display:block;margin-bottom:6px}
+.ew-name{font-size:12px;font-weight:700;color:var(--ink)}
+.ew-sub{font-size:11px;color:var(--muted)}
+.cash-box{background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:18px;text-align:center;margin-bottom:16px}
+.cash-box-title{font-size:15px;font-weight:700;color:#92400e;margin-bottom:6px}
+.cash-box-sub{font-size:13px;color:#b45309;line-height:1.6}
+
+/* Success */
+.success-wrap{text-align:center;padding:12px 0 8px}
+.success-circle{width:72px;height:72px;border-radius:50%;background:#f0fdf4;border:2px solid #86efac;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px}
+.success-title{font-family:var(--font-head);font-size:24px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px}
+.success-sub{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.7}
+.booking-ref{background:var(--paper);border:1.5px dashed var(--border);border-radius:10px;padding:14px;font-family:'Courier New',monospace;font-size:15px;color:var(--orange);letter-spacing:2px;font-weight:700;margin-bottom:20px}
+.booking-ref-label{font-size:11px;color:var(--muted);font-family:var(--font-body);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:500;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:#15803d}
+.toast.error{background:var(--red)}
+
+/* Loader */
+.loader-overlay{position:fixed;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s}
+.loader-overlay.gone{opacity:0;pointer-events:none}
+.loader-logo{font-family:var(--font-head);font-size:40px;font-weight:900;margin-bottom:20px;letter-spacing:-1px}
+.loader-logo span{color:var(--orange)}
+.loader-bar{width:180px;height:3px;background:var(--border);border-radius:3px;overflow:hidden}
+.loader-fill{height:100%;background:var(--orange);border-radius:3px;animation:loadBar 1.3s ease forwards}
+@keyframes loadBar{from{width:0}to{width:100%}}
+
+/* Responsive */
+@media(max-width:900px){
+  .land-hero{grid-template-columns:1fr}
+  .hero-right{display:none}
+  .features-band{grid-template-columns:1fr}
+  .feat{border-right:none;border-bottom:1px solid var(--border)}
+  .trips-layout{grid-template-columns:1fr}
+  .trips-sidebar{display:none}
+  .land-nav{padding:16px 24px}
+  .hero-left{padding:40px 24px 32px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Loader ── -->
+<div class="loader-overlay" id="loader">
+  <div class="loader-logo">Go<span>Trip</span></div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════
+  PAGE: LANDING
+══════════════════════════════════════════ -->
+<div class="page active" id="page-landing">
+  <nav class="land-nav">
+    <div class="logo">Go<span>Trip</span></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-outline" onclick="go('login')">Sign In</button>
+      <button class="btn btn-primary" onclick="go('register')">Get Started →</button>
+    </div>
+  </nav>
+
+  <div class="land-hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <div class="eyebrow-dot"></div>
+        <div class="eyebrow-text">Now live in 40+ cities</div>
+      </div>
+      <h1 class="hero-h1">Travel<br>Further,<br><em>Smarter.</em></h1>
+      <p class="hero-sub">Book intercity trips with verified drivers, real-time tracking, and flexible payment options — all in one place.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" style="padding:14px 32px;font-size:16px" onclick="go('register')">Book Your First Trip</button>
+        <button class="btn btn-outline" style="padding:14px 24px;font-size:16px" onclick="go('login')">Sign In</button>
+      </div>
+      <div class="stats-row">
+        <div>
+          <div class="stat-num">2.4<span>M</span></div>
+          <div class="stat-label">Passengers</div>
+        </div>
+        <div>
+          <div class="stat-num">12<span>K</span></div>
+          <div class="stat-label">Drivers</div>
+        </div>
+        <div>
+          <div class="stat-num">98<span>%</span></div>
+          <div class="stat-label">On-time</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-map">
+        <div class="map-card">
+          <div class="map-header">
+            <div class="map-title">Live Trip</div>
+            <div class="live-badge"><div class="live-dot"></div>On the way</div>
+          </div>
+          <div class="route-visual">
+            <div class="route-stop">
+              <div class="stop-dot from"></div>
+              <div>
+                <div class="stop-label">Cairo — Tahrir</div>
+                <div class="stop-sub">Departure 09:00 AM</div>
+              </div>
+            </div>
+            <div class="stop-line" style="margin-left:5px"></div>
+            <div class="route-stop">
+              <div class="stop-dot to"></div>
+              <div>
+                <div class="stop-label">Alexandria — Sidi Bishr</div>
+                <div class="stop-sub">Arrival ~11:15 AM</div>
+              </div>
+            </div>
+          </div>
+          <div class="driver-row">
+            <div class="d-avatar">MK</div>
+            <div class="d-info">
+              <div class="d-name">Mohamed Khalil</div>
+              <div class="d-vehicle">AC Bus · EGP 85/seat</div>
+            </div>
+            <div class="d-eta">12<small style="font-size:11px;color:rgba(244,99,21,.7)">min</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="features-band">
+    <div class="feat">
+      <div class="feat-icon" style="background:#fff3ec">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f46315" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div>
+        <div class="feat-title">Live GPS Tracking</div>
+        <div class="feat-desc">Follow your driver in real time from pickup to destination.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon" style="background:#e6faf8">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0ea89a" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <div class="feat-title">Verified Drivers</div>
+        <div class="feat-desc">Every driver is background-checked, licensed, and rated by real passengers.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon" style="background:#f0fdf4">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="feat-title">Flexible Payments</div>
+        <div class="feat-desc">Pay by card, e-wallet, or cash. All transactions are 256-bit encrypted.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  PAGE: LOGIN
+══════════════════════════════════════════ -->
+<div class="page" id="page-login">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <button class="back-btn" onclick="go('landing')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to home
+      </button>
+      <div class="auth-logo">Go<span>Trip</span> <div class="auth-logo-dot"></div></div>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Don't have an account? <a onclick="go('register')">Sign up free</a></div>
+
+      <div class="form-group">
+        <label class="form-label">Email or Phone Number</label>
+        <div class="input-icon">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input class="form-input" id="li-id" type="text" placeholder="name@email.com or +20 1xx"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-icon">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="form-input" id="li-pw" type="password" placeholder="••••••••"/>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="li-btn" onclick="doLogin()">Sign In</button>
+
+      <div class="divider">or</div>
+      <button class="social-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-footer-link">New to GoTrip? <a onclick="go('register')">Create an account</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  PAGE: REGISTER
+══════════════════════════════════════════ -->
+<div class="page" id="page-register">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <button class="back-btn" onclick="go('landing')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to home
+      </button>
+      <div class="auth-logo">Go<span>Trip</span> <div class="auth-logo-dot"></div></div>
+      <div class="auth-title">Create account</div>
+      <div class="auth-sub">Already have an account? <a onclick="go('login')">Sign in</a></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" id="rg-fn" type="text" placeholder="Ahmed"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" id="rg-ln" type="text" placeholder="Hassan"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-icon">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input class="form-input" id="rg-em" type="email" placeholder="ahmed@email.com"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <div class="input-icon">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.2 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.5 16z"/></svg>
+          <input class="form-input" id="rg-ph" type="tel" placeholder="+20 100 000 0000"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-icon">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="form-input" id="rg-pw" type="password" placeholder="Min 8 characters"/>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="rg-btn" onclick="doRegister()">Create Account</button>
+      <div class="terms">By registering you agree to our <a href="#" style="color:var(--orange)">Terms of Service</a> and <a href="#" style="color:var(--orange)">Privacy Policy</a>.</div>
+
+      <div class="divider">or</div>
+      <button class="social-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign up with Google
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  PAGE: TRIPS DASHBOARD
+══════════════════════════════════════════ -->
+<div class="page" id="page-trips" style="min-height:100vh;max-height:100vh;overflow:hidden">
+  <div class="app-header">
+    <div class="logo">Go<span>Trip</span></div>
+    <div class="header-right">
+      <div class="user-chip" onclick="signOut()">
+        <div class="user-av" id="uav">A</div>
+        <span class="user-chip-name" id="uname">Ahmed</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="trips-layout" style="height:calc(100vh - 64px)">
+    <!-- Main trips grid -->
+    <div class="trips-main">
+      <div class="section-head">
+        <div class="section-title">Available Trips</div>
+        <span class="section-count" id="tripsCount">6 trips</span>
+      </div>
+      <div class="trips-grid" id="tripsGrid"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="trips-sidebar">
+      <div class="sidebar-tabs">
+        <button class="stab active" onclick="sideTab('history',this)">My Trips</button>
+        <button class="stab" onclick="sideTab('profile',this)">Profile</button>
+      </div>
+      <div id="side-history">
+        <div id="pastList"></div>
+      </div>
+      <div id="side-profile" style="display:none">
+        <div style="text-align:center;padding:16px 0 24px">
+          <div style="width:64px;height:64px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin:0 auto 12px" id="profAv">A</div>
+          <div style="font-weight:700;font-size:16px" id="profName">Ahmed Hassan</div>
+          <div style="color:var(--muted);font-size:13px" id="profEmail">ahmed@email.com</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:var(--paper);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-family:var(--font-head);font-size:28px;font-weight:900;color:var(--orange)" id="profTrips">0</div>
+            <div style="font-size:12px;color:var(--muted);font-weight:500">Total Trips</div>
+          </div>
+          <div style="background:var(--paper);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-family:var(--font-head);font-size:28px;font-weight:900;color:var(--teal)" id="profSpent">0</div>
+            <div style="font-size:12px;color:var(--muted);font-weight:500">EGP Spent</div>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="width:100%;margin-top:16px;border-radius:var(--r-sm)" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  PAYMENT MODAL
+══════════════════════════════════════════ -->
+<div class="overlay" id="payOverlay" onclick="overlayClick(event)">
+  <div class="modal" id="payModal">
+    <div id="payContent"></div>
+  </div>
+</div>
+
+<script>
+// ─── APP STATE ───────────────────────────────────────
+const S = {
+  user: null,
+  trip: null,
+  history: [
+    {id:201,from:'Cairo',to:'Alexandria',date:'Apr 28, 2025',price:85,driver:'Mohamed K.',status:'completed'},
+    {id:202,from:'Cairo',to:'Giza',date:'Apr 15, 2025',price:25,driver:'Ahmed S.',status:'completed'},
+    {id:203,from:'Cairo',to:'Hurghada',date:'Mar 12, 2025',price:150,driver:'Tarek M.',status:'completed'},
+    {id:204,from:'Cairo',to:'Luxor',date:'Feb 20, 2025',price:180,driver:'Omar T.',status:'cancelled'},
+    {id:205,from:'Cairo',to:'Sharm',date:'Jan 08, 2025',price:220,driver:'Khalid R.',status:'completed'}
+  ]
+};
+
+// ─── TRIPS DATA ──────────────────────────────────────
+const TRIPS = [
+  {id:1,from:'Cairo',to:'Alexandria',time:'07:30 AM',dur:'2h 15m',seats:4,price:85,type:'AC Bus',bg:'linear-gradient(135deg,#fff3ec,#ffe0cc)',icon:'🚌',driver:{n:'Mohamed Khalil',r:4.9,c:'#f46315',bg:'#fff3ec'}},
+  {id:2,from:'Cairo',to:'Giza',time:'08:00 AM',dur:'45m',seats:6,price:25,type:'Minibus',bg:'linear-gradient(135deg,#e6faf8,#ccf2ee)',icon:'🚐',driver:{n:'Ahmed Samir',r:4.7,c:'#0ea89a',bg:'#e6faf8'}},
+  {id:3,from:'Cairo',to:'Sharm El Sheikh',time:'10:00 AM',dur:'5h 30m',seats:2,price:220,type:'VIP Coach',bg:'linear-gradient(135deg,#f0f4ff,#dce7ff)',icon:'✨',driver:{n:'Khalid Rashad',r:5.0,c:'#4f46e5',bg:'#f0f4ff'}},
+  {id:4,from:'Cairo',to:'Luxor',time:'11:30 PM',dur:'8h',seats:5,price:180,type:'Sleeper',bg:'linear-gradient(135deg,#fefce8,#fde68a)',icon:'🌙',driver:{n:'Omar Taha',r:4.8,c:'#d97706',bg:'#fefce8'}},
+  {id:5,from:'Cairo',to:'Hurghada',time:'09:00 AM',dur:'4h 45m',seats:3,price:150,type:'AC Bus',bg:'linear-gradient(135deg,#fff0f0,#fecaca)',icon:'🏖️',driver:{n:'Tarek Mahmoud',r:4.6,c:'#dc2626',bg:'#fff0f0'}},
+  {id:6,from:'Cairo',to:'Port Said',time:'06:00 AM',dur:'3h',seats:7,price:95,type:'Express',bg:'linear-gradient(135deg,#f0fdf4,#bbf7d0)',icon:'⚓',driver:{n:'Youssef Ali',r:4.9,c:'#16a34a',bg:'#f0fdf4'}}
+];
+
+// ─── NAVIGATION ──────────────────────────────────────
+function go(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast show '+(type||'');
+  setTimeout(()=>el.className='toast',3000);
+}
+
+// ─── AUTH ─────────────────────────────────────────────
+function doLogin(){
+  const id=document.getElementById('li-id').value.trim();
+  const pw=document.getElementById('li-pw').value.trim();
+  if(!id||!pw){toast('Please fill all fields','error');return;}
+  const btn=document.getElementById('li-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Signing in…';
+  setTimeout(()=>{
+    const name=id.includes('@')?id.split('@')[0]:id;
+    S.user={name,email:id};
+    initDashboard();
+    go('trips');
+    toast('Welcome back, '+name.charAt(0).toUpperCase()+name.slice(1)+' 👋','success');
+    btn.disabled=false; btn.textContent='Sign In';
+  },1400);
+}
+
+function doRegister(){
+  const fn=document.getElementById('rg-fn').value.trim();
+  const ln=document.getElementById('rg-ln').value.trim();
+  const em=document.getElementById('rg-em').value.trim();
+  const ph=document.getElementById('rg-ph').value.trim();
+  const pw=document.getElementById('rg-pw').value.trim();
+  if(!fn||!ln||!em||!ph||!pw){toast('Please fill all fields','error');return;}
+  if(pw.length<8){toast('Password must be at least 8 characters','error');return;}
+  const btn=document.getElementById('rg-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Creating account…';
+  setTimeout(()=>{
+    S.user={name:fn+' '+ln,email:em,phone:ph};
+    initDashboard();
+    go('trips');
+    toast('Account created! Welcome to GoTrip 🎉','success');
+    btn.disabled=false; btn.textContent='Create Account';
+  },1600);
+}
+
+function signOut(){
+  S.user=null;
+  go('landing');
+  toast('Signed out successfully');
+}
+
+// ─── DASHBOARD ───────────────────────────────────────
+function initDashboard(){
+  const u=S.user;
+  const initials=u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('uav').textContent=initials;
+  document.getElementById('uname').textContent=u.name.split(' ')[0];
+  document.getElementById('profAv').textContent=initials;
+  document.getElementById('profName').textContent=u.name;
+  document.getElementById('profEmail').textContent=u.email||'';
+  renderTrips(); renderHistory();
+  updateProfile();
+}
+
+function renderTrips(){
+  const g=document.getElementById('tripsGrid');
+  g.innerHTML=TRIPS.map(t=>`
+    <div class="trip-card" onclick="openPayment(${t.id})">
+      <div class="trip-card-top">
+        <div class="trip-route">
+          ${t.from}
+          <span class="route-arrow">→</span>
+          ${t.to}
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px">
+          <div class="trip-price-tag">EGP ${t.price}<small>/seat</small></div>
+        </div>
+      </div>
+      <div class="trip-vehicle-banner" style="background:${t.bg}">
+        <span style="font-size:40px">${t.icon}</span>
+        <span style="position:absolute;bottom:8px;right:12px;font-size:11px;font-weight:600;color:rgba(0,0,0,.4)">${t.type}</span>
+      </div>
+      <div class="trip-driver">
+        <div class="td-av" style="background:${t.driver.bg};color:${t.driver.c}">${t.driver.n.split(' ').map(x=>x[0]).join('')}</div>
+        <div class="td-name">${t.driver.n}</div>
+        <div class="td-rating">★ ${t.driver.r}</div>
+      </div>
+      <div class="trip-meta">
+        <span class="tag tag-orange">⏰ ${t.time}</span>
+        <span class="tag tag-gray">⏱ ${t.dur}</span>
+        <span class="tag" style="background:#f0fdf4;color:#16a34a">👥 ${t.seats} left</span>
+      </div>
+      <div class="trip-footer">
+        <div class="seats-left">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          ${t.seats} seats available
+        </div>
+        <button class="btn btn-primary" style="padding:8px 18px;font-size:13px" onclick="event.stopPropagation();openPayment(${t.id})">Book Now</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderHistory(){
+  const c=document.getElementById('pastList');
+  if(!S.history.length){
+    c.innerHTML=`<div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-text">No trips yet.<br>Book your first trip!</div></div>`;
+    return;
+  }
+  c.innerHTML=S.history.map(h=>`
+    <div class="past-card">
+      <div class="past-route">
+        ${h.from} <span style="color:var(--orange)">→</span> ${h.to}
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${h.date} · ${h.driver}</div>
+      <div class="past-meta">
+        <span class="tag ${h.status==='completed'?'tag-teal':'tag-red'}" style="font-size:11px">
+          ${h.status==='completed'?'✓ Completed':'✕ Cancelled'}
+        </span>
+        <span class="past-price">EGP ${h.price}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateProfile(){
+  const total=S.history.filter(h=>h.status==='completed').length;
+  const spent=S.history.filter(h=>h.status==='completed').reduce((a,h)=>a+h.price,0);
+  document.getElementById('profTrips').textContent=total;
+  document.getElementById('profSpent').textContent=spent;
+}
+
+function sideTab(tab,btn){
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('side-history').style.display=tab==='history'?'block':'none';
+  document.getElementById('side-profile').style.display=tab==='profile'?'block':'none';
+}
+
+// ─── PAYMENT MODAL ────────────────────────────────────
+function openPayment(id){
+  S.trip=TRIPS.find(t=>t.id===id);
+  renderPayModal(false);
+  document.getElementById('payOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closePayment(){
+  document.getElementById('payOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function overlayClick(e){
+  if(e.target===document.getElementById('payOverlay')) closePayment();
+}
+
+function switchPM(tab,btn){
+  document.querySelectorAll('.pm-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.pm-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const p=document.getElementById('pm-'+tab);
+  if(p) p.classList.add('active');
+}
+
+function fmtCardNum(el){
+  let v=el.value.replace(/\D/g,'').substr(0,16);
+  el.value=v.replace(/(.{4})/g,'$1 ').trim();
+  const d=document.getElementById('cv-num-disp');
+  if(d) d.textContent=el.value||'•••• •••• •••• ••••';
+}
+
+function fmtExp(el){
+  let v=el.value.replace(/\D/g,'').substr(0,4);
+  if(v.length>=3) v=v.substr(0,2)+'/'+v.substr(2);
+  el.value=v;
+  const d=document.getElementById('cv-exp-disp');
+  if(d) d.textContent=v||'MM/YY';
+}
+
+function renderPayModal(success){
+  const t=S.trip;
+  if(!t) return;
+  const fee=5, total=t.price+fee;
+
+  if(success){
+    const ref='GT-'+Math.random().toString(36).substr(2,9).toUpperCase();
+    document.getElementById('payContent').innerHTML=`
+      <div class="modal-hd">
+        <div class="modal-title">Booking Confirmed</div>
+        <button class="modal-close" onclick="closePayment()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="success-wrap">
+          <div class="success-circle">✓</div>
+          <div class="success-title">You're all set!</div>
+          <div class="success-sub">Your seat on the <strong>${t.from} → ${t.to}</strong> trip has been reserved. A confirmation has been sent to your email.</div>
+          <div class="booking-ref">
+            <div class="booking-ref-label">Booking Reference</div>
+            ${ref}
+          </div>
+          <button class="btn btn-primary btn-full" onclick="closePayment()">Back to Trips</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('payContent').innerHTML=`
+    <div class="modal-hd">
+      <div class="modal-title">Complete Booking</div>
+      <button class="modal-close" onclick="closePayment()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="trip-summary">
+        <div class="ts-row"><span class="ts-label">Route</span><span class="ts-val">${t.from} → ${t.to}</span></div>
+        <div class="ts-row"><span class="ts-label">Departure</span><span class="ts-val">${t.time}</span></div>
+        <div class="ts-row"><span class="ts-label">Duration</span><span class="ts-val">${t.dur}</span></div>
+        <div class="ts-row"><span class="ts-label">Vehicle</span><span class="ts-val">${t.type}</span></div>
+        <div class="ts-row"><span class="ts-label">Driver</span><span class="ts-val">${t.driver.n} ★${t.driver.r}</span></div>
+        <div class="ts-row"><span class="ts-label">Ticket price</span><span class="ts-val">EGP ${t.price}</span></div>
+        <div class="ts-row"><span class="ts-label">Service fee</span><span class="ts-val">EGP ${fee}</span></div>
+        <div class="ts-row"><span class="ts-label" style="font-weight:700">Total</span><span class="ts-val ts-total">EGP ${total}</span></div>
+      </div>
+
+      <div class="pay-methods">
+        <button class="pm-tab active" onclick="switchPM('card',this)">💳 Card</button>
+        <button class="pm-tab" onclick="switchPM('ewallet',this)">📱 E-Wallet</button>
+        <button class="pm-tab" onclick="switchPM('cash',this)">💵 Cash</button>
+      </div>
+
+      <!-- Card panel -->
+      <div class="pm-panel active" id="pm-card">
+        <div class="card-visual">
+          <div class="cv-chip"></div>
+          <div class="cv-num" id="cv-num-disp">•••• •••• •••• ••••</div>
+          <div class="cv-bottom">
+            <div>
+              <div class="cv-holder-label">Card Holder</div>
+              <div class="cv-holder-name" id="cv-name-disp">FULL NAME</div>
+            </div>
+            <div style="text-align:right">
+              <div class="cv-exp-label">Expires</div>
+              <div class="cv-exp-val" id="cv-exp-disp">MM/YY</div>
+            </div>
+          </div>
+          <div class="cv-network"><div class="cv-circle-r"></div><div class="cv-circle-y"></div></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Card Number</label>
+          <input class="form-input" id="pm-cn" type="text" maxlength="19" placeholder="1234 5678 9012 3456" oninput="fmtCardNum(this)"/>
+        </div>
+        <div class="card-grid">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Expiry Date</label>
+            <input class="form-input" id="pm-exp" type="text" maxlength="5" placeholder="MM/YY" oninput="fmtExp(this)"/>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">CVV</label>
+            <input class="form-input" id="pm-cvv" type="password" maxlength="3" placeholder="•••"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name on Card</label>
+          <input class="form-input" id="pm-nm" type="text" placeholder="AHMED HASSAN" oninput="document.getElementById('cv-name-disp').textContent=this.value.toUpperCase()||'FULL NAME'"/>
+        </div>
+        <button class="btn btn-primary btn-full" id="pm-pay-btn" onclick="processPayment('card')">Pay EGP ${total}</button>
+        <div class="secure-note">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          256-bit SSL encrypted · Powered by GoTrip Pay
+        </div>
+      </div>
+
+      <!-- E-Wallet panel -->
+      <div class="pm-panel" id="pm-ewallet">
+        <div class="ewallet-grid">
+          <button class="ew-btn" onclick="processPayment('ewallet','Vodafone Cash')">
+            <span class="ew-icon">📱</span>
+            <div class="ew-name">Vodafone Cash</div>
+            <div class="ew-sub">Instant transfer</div>
+          </button>
+          <button class="ew-btn" onclick="processPayment('ewallet','Fawry')">
+            <span class="ew-icon">🧾</span>
+            <div class="ew-name">Fawry</div>
+            <div class="ew-sub">Pay at kiosk</div>
+          </button>
+          <button class="ew-btn" onclick="processPayment('ewallet','InstaPay')">
+            <span class="ew-icon">⚡</span>
+            <div class="ew-name">InstaPay</div>
+            <div class="ew-sub">Bank to bank</div>
+          </button>
+          <button class="ew-btn" onclick="processPayment('ewallet','Orange Money')">
+            <span class="ew-icon">🟠</span>
+            <div class="ew-name">Orange Money</div>
+            <div class="ew-sub">Mobile wallet</div>
+          </button>
+        </div>
+        <div class="secure-note">You will be securely redirected to complete payment</div>
+      </div>
+
+      <!-- Cash panel -->
+      <div class="pm-panel" id="pm-cash">
+        <div class="cash-box">
+          <div class="cash-box-title">💵 Pay on Board</div>
+          <div class="cash-box-sub">Pay <strong>EGP ${total}</strong> directly to the driver when you board.<br/>Your seat is reserved for <strong>15 minutes</strong> after booking.</div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="processPayment('cash')">Reserve Seat · Pay Later</button>
+      </div>
+    </div>`;
+}
+
+function processPayment(method, provider=''){
+  if(method==='card'){
+    const cn=(document.getElementById('pm-cn')||{}).value||'';
+    const exp=(document.getElementById('pm-exp')||{}).value||'';
+    const cvv=(document.getElementById('pm-cvv')||{}).value||'';
+    const nm=(document.getElementById('pm-nm')||{}).value||'';
+    if(cn.replace(/\s/g,'').length<16){toast('Enter a valid 16-digit card number','error');return;}
+    if(exp.length<5){toast('Enter a valid expiry date','error');return;}
+    if(cvv.length<3){toast('Enter a valid CVV','error');return;}
+    if(!nm.trim()){toast('Enter name on card','error');return;}
+  }
+  const btn=document.getElementById('pm-pay-btn')||event.target;
+  const orig=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> Processing…';
+  setTimeout(()=>{
+    btn.disabled=false; btn.innerHTML=orig;
+    // Add to history
+    const t=S.trip;
+    const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    S.history.unshift({id:Date.now(),from:t.from,to:t.to,date:today,price:t.price,driver:t.driver.n,status:'completed'});
+    renderHistory(); updateProfile();
+    renderPayModal(true);
+    toast('Payment successful! 🎉','success');
+  },2000);
+}
+
+// ─── BOOT ────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  setTimeout(()=>document.getElementById('loader').classList.add('gone'),1500);
+});
+</script>
+</body>
+</html>
